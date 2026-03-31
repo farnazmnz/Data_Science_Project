@@ -5,7 +5,7 @@ import random
 import torch
 import torch.nn as nn
 from pathlib import Path
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from collections import defaultdict
 
 def get_video_id_from_pt(filename):
@@ -96,31 +96,6 @@ class VideoFeatureDataset(Dataset):
         y = labels[0]
 
         return x.float(), torch.tensor(y, dtype=torch.long)
-
-
-# feature_dir = Path(__file__).resolve().parent.parent / "data" / "features"
-# feature_dir = str(feature_dir)
-
-# video_groups = group_feature_files_by_video(feature_dir, expected_clips=7)
-# train_videos, val_videos, test_videos = split_videos_no_leakage(video_groups, 0.7, 0.1, seed=42)
-
-# train_loader = DataLoader(
-#     VideoFeatureDataset(video_groups, train_videos),
-#     batch_size=4,
-#     shuffle=True
-# )
-
-# val_loader = DataLoader(
-#     VideoFeatureDataset(video_groups, val_videos),
-#     batch_size=4,
-#     shuffle=False
-# )
-
-# test_loader = DataLoader(
-#     VideoFeatureDataset(video_groups, test_videos),
-#     batch_size=4,
-#     shuffle=False
-# )
 
 class SinCosPositionalEncoding(nn.Module):
     def __init__(self, d_model, max_len):
