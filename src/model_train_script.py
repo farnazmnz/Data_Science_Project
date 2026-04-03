@@ -4,6 +4,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 import flat_transformer as ft
 import linformer as lf
+import lstm as lstm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -32,19 +33,28 @@ test_loader = DataLoader(
     shuffle=False
 )
 
-# ------------- TRAINING LINFORMER -------------------------- #
-model = lf.LinformerTemporalTransformer(
+# ------------- TRAINING LSTM ------------------------------- #
+model = lstm.CNN_LSTM_Model(
     input_dim=512,
-    d_model=256,
-    num_classes=8,
-    num_clips=7,
-    frames_per_clip=12,
-    nhead=4,
+    hidden_dim=256,
     num_layers=2,
-    ff_dim=512,
-    k_proj=16,
+    num_classes=8,
     dropout=0.2
 ).to(device)
+
+# ------------- TRAINING LINFORMER -------------------------- #
+# model = lf.LinformerTemporalTransformer(
+#     input_dim=512,
+#     d_model=256,
+#     num_classes=8,
+#     num_clips=7,
+#     frames_per_clip=12,
+#     nhead=4,
+#     num_layers=2,
+#     ff_dim=512,
+#     k_proj=16,
+#     dropout=0.2
+# ).to(device)
 
 # ------------- TRAINING FLAT TRANSFORMER -------------------- #
 
@@ -61,7 +71,6 @@ model = lf.LinformerTemporalTransformer(
 #     dropout=0.2
 # ).to(device)
 
-# Gavin - Added label smoothing to help with generalization
 criterion = nn.CrossEntropyLoss()
 # Gavin - Added weight decay to help with generalization
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
@@ -95,7 +104,8 @@ patience_counter = 0
 epochs = 25
 
 src_path = Path(__file__).resolve().parent
-weights_path = src_path / "transformer_weights" / "best_linformer_weights.pth"
+# Change the file path depending on current model
+weights_path = src_path / "transformer_weights" / "best_lstm_weights.pth"
 
 for epoch in range(epochs):
     model.train()
@@ -158,60 +168,3 @@ for epoch in range(epochs):
         break
 
     epoch += 1
-
-# # ------------- Uncomment and run everything below to eval ----------------
-src_path = Path(__file__).resolve().parent
-# Change last portion of path to current model config
-# weights_path = src_path / "transformer_weights" / "best_flat_transformer_weights.pth"
-weights_path = src_path / "transformer_weights" / "best_linformer_weights.pth"
-
-model.load_state_dict(torch.load(weights_path))
-model.eval()
-
-def evaluate_test(model, loader, criterion):
-    model.eval()
-    total_loss = 0.0
-    correct = 0
-    total = 0
-
-    all_preds = []
-    all_labels = []
-
-    with torch.no_grad():
-        for features, labels in loader:
-            features = features.to(device)
-            labels = labels.to(device)
-
-            outputs = model(features)
-            loss = criterion(outputs, labels)
-
-            total_loss += loss.item() * labels.size(0)
-            preds = outputs.argmax(dim=1)
-            correct += (preds == labels).sum().item()
-            total += labels.size(0)
-
-            # store for confusion matrix
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
-
-    avg_loss = total_loss / total
-    acc = 100.0 * correct / total
-    return avg_loss, acc, all_preds, all_labels
-
-test_loss, test_acc, all_preds, all_labels = evaluate_test(
-    model,
-    test_loader,
-    criterion
-)
-
-# print("\n===== Flat Transformer Evaluation =====")
-print("\n===== Linformer Evaluation =====")
-print(f"Loss: {test_loss:.4f}")
-print(f"Accuracy: {test_acc:.2f}%")
-
-from sklearn.metrics import confusion_matrix
-
-cm = confusion_matrix(all_labels, all_preds)
-
-print("\nConfusion Matrix:")
-print(cm)
