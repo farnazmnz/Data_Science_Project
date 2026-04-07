@@ -13,12 +13,11 @@ A pretrained ResNet18 is used to extract spatial features, while temporal depend
 - Model temporal relationships between frames  
 - Compare Transformer vs LSTM performance  
 - Evaluate models using accuracy and F1-score  
-- Analyze generalization across datasets  
 
 ---
 
 ## Dataset
-We use the **RAVDESS (Ryerson Audio-Visual Database of Emotional Speech and Song)** dataset.
+We use the **[RAVDESS](https://www.kaggle.com/datasets/uwrfkaggler/ravdess-emotional-speech-audio) (Ryerson Audio-Visual Database of Emotional Speech and Song)** dataset.
 
 Emotion Classes:
 - Neutral
@@ -31,7 +30,22 @@ Emotion Classes:
 - Surprise
 
 ---
+## Data Preprocessing
 
+Before training, each video is converted into short clips.
+
+Steps:
+1. Load RAVDESS video sequences
+2. Detect face using MediaPipe face landmarks
+3. Crop facial bounding box
+4. Resize frames to 128×128
+5. Normalize using ImageNet mean/std
+6. Split videos into **12-frame clips**
+7. Store clips for model input
+
+This clip-based approach reduces computational cost while preserving temporal information.
+
+---
 ## Models
 ### CNN + LSTM
 Temporal modeling using LSTM baseline.
